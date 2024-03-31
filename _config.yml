@@ -29,7 +29,9 @@ github_username:  adarshramiyer
 linkedin_username: adarsh-iyer
 
 # Build settings
-theme: minima
+
+# for below, all theme files are now in this directory
+# theme: minima
 plugins:
   - jekyll-feed
 
