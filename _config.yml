@@ -30,7 +30,7 @@ linkedin_username: adarsh-iyer
 
 # Build settings
 
-# for below, all theme files are now in this directory
+# for below, all theme files are now in this directory so that theme reference is not necessary
 # theme: minima
 plugins:
   - jekyll-feed
