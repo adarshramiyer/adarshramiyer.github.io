@@ -37,7 +37,7 @@
   }
 
   .page-link {
-    @include relative-font-size(1.1);
+    @include relative-font-size(1);
     color: $text-color;
     line-height: $base-line-height;
 
