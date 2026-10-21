@@ -1,0 +1,87 @@
+/* Simpler variant of the landing (used by simple.html, loaded after style.css):
+   the intro sits near the top at its natural height, with the sections following right after it.
+   The bottom fade stays, without the "Projects" cue. */
+
+.hero {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 56px;
+  min-height: auto;
+  padding: 104px 0 8px;
+}
+
+.hero h1 { font-size: clamp(2.4rem, 4.4vw, 3.2rem); }
+
+.hero .photo img,
+.hero .photo-noise { width: 260px; max-width: 260px; }
+
+section:first-of-type { padding-top: 40px; }
+
+@media (max-width: 820px) {
+  .hero { grid-template-columns: 1fr; gap: 24px; padding-top: 40px; }
+  .hero .photo img,
+  .hero .photo-noise { width: 160px; max-width: 160px; }
+}
+
+/* Square photo with softly rounded corners; the noise intro follows the same shape. */
+.hero .photo img,
+.hero .photo-noise canvas { border-radius: 6px; }
+
+/* Name in Geologica, normal case. */
+.hero h1 {
+  font-family: 'Geologica', sans-serif;
+  font-weight: 600;
+  font-variant-caps: normal;
+  letter-spacing: -.02em;
+  font-size: clamp(2.3rem, 4.2vw, 3rem);
+}
+
+/* Section headings and the top row follow the name font, a step lighter. */
+section > h2 {
+  font-family: 'Geologica', sans-serif;
+  font-weight: 500;
+  font-size: 1.4rem;
+  letter-spacing: -.01em;
+}
+
+.topnav {
+  font-family: 'Geologica', sans-serif;
+  font-weight: 400;
+  font-size: 1.05rem;
+}
+
+/* Optional author list on a project (for papers): sits between the title and the venue.
+   Your own name goes in <strong>; other names can be plain text or links. */
+.project .authors { font-size: .88em; line-height: 1.45; color: var(--fg); margin: .2em 0 0; }
+.project .authors strong { font-weight: 600; }
+.project .authors a { color: inherit; text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: .2em; }
+.project .authors a:hover { color: var(--accent); text-decoration-color: currentColor; }
+
+/* Project thumbnails: wider 16:9 frame (images and videos are center-cropped to it). */
+.project { grid-template-columns: 275px 1fr; }
+@media (max-width: 820px) { .project { grid-template-columns: 1fr; } }
+.project > img,
+.project > video { aspect-ratio: 16 / 9; }
+
+/* Distinctions (Oral, Spotlight, Best Paper, ...): <strong> inside a venue line, or class="highlight" anywhere. */
+.project .venue strong,
+.highlight { color: var(--accent); font-weight: 600; }
+
+/* Flowing image (see site.js): same 16:9 frame as other thumbnails. The base image is distorted by an SVG
+   turbulence filter while the project is hovered; .flow-still layers stay fixed on top. Both are zoomed slightly
+   (identically, so they stay aligned) so the distortion never pulls in empty edges. */
+.project > .flow-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--image-bg);
+}
+.flow-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.08);
+}

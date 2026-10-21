@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Adarsh Iyer</title>
+  <script>matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.classList.add("intro")</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Commissioner:wght@400;500;600&family=Geologica:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="simple.css">
+</head>
+
+<body>
+
+  <!--
+  HOW TO EDIT THIS PAGE
+
+  The page is a list of <section> blocks below the landing. To add a new one,
+  copy this template, paste it where you want it, and change the id and title:
+
+    <section id="my-section">
+      <h2>My Section</h2>
+      <p>Any text, links, images, or lists go here.</p>
+    </section>
+
+  To link to it from the top bar, add <a href="#my-section"></a> to <nav class="topnav">; its label is filled in
+  automatically from the section's <h2>, so top-bar labels always match the section titles.
+
+  Reusable building blocks (copy one from the sections below):
+    - News item:  <li><time>Mon YYYY</time><span>...</span></li>   inside <ul class="news">
+    - Project:    <article class="project"> ... </article>          (image + title + venue + text + links)
+                  Optional author list (for papers), right after the <h3>:
+                    <div class="authors"><strong>Adarsh Iyer</strong>, <a href="...">Coauthor Name</a>, Another Author</div>
+                  Distinctions (Oral, Spotlight, Best Paper, ...): wrap them in <strong> inside the venue line:
+                    <div class="venue">CVPR 2026 &middot; <strong>Oral</strong></div>
+                  or use <span class="highlight">...</span> anywhere else.
+                  For a video instead of an image: <video src="...mp4" muted loop playsinline preload="auto"></video>
+                  (cropped to the same 16:9 frame; plays while the project is hovered)
+                  For a still image that "flows" on hover (the first image swirls; an optional second image with
+                  transparency stays fixed on top, e.g. a logo cut out of the first, with the logo painted out of the
+                  first image so only the background moves):
+                    <div class="flow-media"><img src="...png" alt="..."><img class="flow-still" src="...logo.png" alt=""></div>
+    - Muted text: <p class="muted">...</p>
+-->
+
+  <div class="page">
+
+    <nav class="topnav">
+      <a href="#news">News</a>
+      <a href="#projects">Work</a>
+    </nav>
+
+    <!-- ===================== Landing ===================== -->
+    <header class="hero">
+      <div>
+        <h1>Adarsh Iyer</h1>
+        <!-- <div class="tagline">MIT Computer Science &nbsp; | &nbsp; Machine Learning Research</div> -->
+
+        <div class="bio">
+          <p>
+            I study Computer Science at MIT and do research on vision and generative modeling
+            in Professor <a href="https://www.vincentsitzmann.com/">Vincent Sitzmann's</a> group. I have trained and shipped state-of-the-art LLMs through internships at <a href="https://www.inceptionlabs.ai/">Inception Labs</a> and <a href="https://www.continue.dev">Continue</a> (acquired by Cursor).
+          </p>
+          <p>
+            I'm broadly interested in
+            robot learning,
+            generative modeling,
+            reinforcement learning,
+            perception, and
+            open-ended exploration. I also enjoy running cross country and track for MIT,
+            playing music, painting, woodworking, and discussing philosophy.
+          </p>
+        </div>
+
+        <nav class="links">
+          <a href="mailto:adarsh@mit.edu">Email</a>
+          <a href="https://www.linkedin.com/in/adarsh-iyer" target="_blank" rel="noopener">LinkedIn</a>
+          <a href="https://scholar.google.com/citations?user=fMKYQ4gAAAAJ&amp;hl=en" target="_blank" rel="noopener">Scholar</a>
+          <a href="https://github.com/adarshramiyer/" target="_blank" rel="noopener">GitHub</a>
+        </nav>
+      </div>
+
+      <div class="photo">
+        <img src="images/adarsh_headshot.jpg" alt="Adarsh Iyer">
+      </div>
+    </header>
+
+    <!-- ===================== News ===================== -->
+    <section id="news">
+      <h2>News</h2>
+      <ul class="news">
+        <li><time>September 2026</time><span><a href="https://www.inceptionlabs.ai/blog/introducing-mercury-2-5">Mercury
+              2.5</a> is released, the leading diffusion LLM!</span></li>
+        <li><time>September 2025</time><span>We released <a href="https://blog.continue.dev/instinct/">Instinct</a>, the state-of-the-art open model for next-edit prediction!</span></li>
+      </ul>
+    </section>
+
+    <!-- ===================== Projects ===================== -->
+    <section id="projects">
+      <h2>Work</h2>
+
+      <article class="project">
+        <video src="images/mercury_2p5.mp4" muted loop playsinline preload="auto" alt="Mercury 2.5"></video>
+        <div>
+          <h3><a href="https://www.inceptionlabs.ai/blog/introducing-mercury-2-5">Introducing Mercury 2.5</a></h3>
+          <div class="venue">Inception Labs, 2026</div>
+          <p>Inception's flagship diffusion LLM, delivering cost-optimized frontier intelligence at 1107 tok/s. I
+            contributed to the post-training, evaluation, and release of the model.</p>
+          <!-- <div class="project-links">
+          <a href="https://www.inceptionlabs.ai/blog/introducing-mercury-2-5">blog post</a>
+        </div> -->
+        </div>
+      </article>
+
+      <article class="project">
+        <video src="images/dual_photo.mp4" muted loop playsinline preload="auto" alt="Dual Photography"></video>
+        <div>
+          <h3><a href="dual-photography/">Lights Are Secretly Cameras: Simulating Dual Photography in Mitsuba 3</a></h3>
+          <div class="venue">MIT 6.4400 (Computer Graphics), 2025 &middot; <strong>Top 5 project out of 44</strong>
+          </div>
+          <div class="authors"><strong>Adarsh Iyer</strong>, Tim Neumann</div>
+          <p>A simulation of <a href="https://graphics.stanford.edu/papers/dual_photography/">Sen et al.</a>, using a
+            light as a camera, and a camera as a light. The adaptive multiplexing algorithm speeds up acquisition of the
+            light transport matrix by 1000x.</p>
+          <div class="project-links">
+            <a href="https://github.com/adarshramiyer/dual-photography">code</a>
+            <a href="dual-photography/">project page</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="project">
+        <div class="flow-media">
+          <img src="images/continue_instinct_bg.jpg" alt="Continue Instinct">
+          <img class="flow-still" src="images/continue_instinct_logo.png" alt="">
+        </div>
+        <div>
+          <h3><a href="https://blog.continue.dev/instinct/">Introducing Instinct: the world's best open Next Edit model,
+              built by Continue</a></h3>
+          <div class="venue">Continue, 2025</div>
+          <div class="authors"><strong>Adarsh Iyer</strong>, Nate Sesti</div>
+          <p>A next-edit prediction model for coding. I got to execute the full development cycle, from securing compute
+            resources and running experiments to evaluations and release.</p>
+          <div class="project-links">
+            <a href="https://github.com/continuedev/instinct">code</a>
+            <a href="https://huggingface.co/continuedev/instinct">huggingface</a>
+            <a href="https://blog.continue.dev/instinct/">project page</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="project">
+        <video src="images/symanntex.mp4" muted loop playsinline preload="auto"
+          alt="Expressive Symbolic Regression"></video>
+        <div>
+          <h3><a href="https://arxiv.org/abs/2406.06585">Expressive Symbolic Regression for Interpretable Models of
+              Discrete-Time Dynamical Systems</a></h3>
+          <div class="venue">arXiv, 2024</div>
+          <div class="authors"><strong>Adarsh Iyer</strong>, Nibodh Boddupalli, Jeff Moehlis</div>
+          <p>A custom neural network with a new fine-tuning scheme to identify simple mathematical expressions for
+            chaotic discrete-time dynamical systems. </p>
+          <div class="project-links">
+            <a href="https://arxiv.org/abs/2406.06585">paper</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="project">
+        <video src="images/gait.mp4" muted loop playsinline preload="auto"
+          alt="Intelligent Running Form Analysis"></video>
+        <div>
+          <h3><a href="https://ieeexplore.ieee.org/document/10179061">g<u>AI</u>t: Deep Learning Based Evaluation of
+              Injurious Running Biomechanics Using Pose Estimation</a></h3>
+          <div class="venue">IEEE ICPRS, 2023 &middot; <strong>Runner-Up Student Paper</strong></div>
+          <div class="authors"><strong>Adarsh Iyer</strong></div>
+          <p>A high school research project on classifying running biomechanics from pose time series.</p>
+          <div class="project-links">
+            <a href="https://ieeexplore.ieee.org/document/10179061">paper</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- <article class="project">
+      <img src="images/placeholder-6.svg" alt="">
+      <div>
+        <h3><a href="#">Placeholder</a></h3>
+        <div class="authors"><strong>Adarsh Iyer</strong>, <a href="#">Coauthor Name</a>, Another Author</div>
+        <div class="venue">Venue or Organization, Year &middot; <strong>Callout</strong></div>
+        <p>description here</p>
+        <div class="project-links">
+          <a href="#">paper</a>
+          <a href="#">code</a>
+          <a href="#">project page</a>
+        </div>
+      </div>
+    </article> -->
+    </section>
+
+    <!-- ===================== Fun Stuff ===================== -->
+    <!-- <section id="fun">
+    <h2>Fun Stuff</h2>
+    <p class="muted">Placeholder &mdash; running, music, woodworking, and other things.</p>
+  </section> -->
+
+  </div>
+
+  <footer>&copy; 2026 Adarsh Iyer</footer>
+
+  <div class="scroll-fade"></div>
+
+  <script src="site.js"></script>
+</body>
+
+</html>

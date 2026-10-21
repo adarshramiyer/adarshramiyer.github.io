@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Lights Are Secretly Cameras · Dual Photography in Mitsuba 3</title>
+  <meta name="description"
+    content="Simulated dual photography: measuring light transport in Mitsuba 3 and rendering the scene from the projector's point of view.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap"
+    rel="stylesheet">
+  <!-- KaTeX: LaTeX between $...$ (inline) or $$...$$ (display) in the page is typeset on load -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+    integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"
+    integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+    integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous"
+    onload="renderMathInElement(document.body, {
+      delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}],
+      throwOnError: false
+    })"></script>
+  <style>
+    :root {
+      --bg: #0c0c0e;
+      --surface: #141417;
+      --surface-2: #1b1b1f;
+      --border: #26262b;
+      --rule: #34343a;
+      --text: #ececef;
+      --muted: #9d9da6;
+      --faint: #6c6c75;
+      --link: #7cb8ff;
+      --accent: #f5a524;
+      /* projector */
+      --camera: #38bdf8;
+      /* camera */
+      --control: #1d1d22;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --font-display: Lato, "Helvetica Neue", Arial, sans-serif;
+      /* title + headings */
+      --font-body: Lato, "Helvetica Neue", Arial, sans-serif;
+      --display-weight: 900;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      scroll-behavior: smooth;
+      scroll-padding-top: 32px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(1100px 520px at 12% -8%, rgba(245, 165, 36, 0.07), transparent 70%),
+        radial-gradient(1000px 520px at 92% -6%, rgba(56, 189, 248, 0.07), transparent 70%),
+        var(--bg);
+      background-repeat: no-repeat;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 17px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: var(--link);
+      text-decoration: none;
+    }
+
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* ---- layout: content column + contents rail ---- */
+    .page {
+      padding: 0 16px;
+    }
+
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 44px 0 96px;
+    }
+
+    /* ---- hero ---- */
+    header.hero {
+      text-align: center;
+      margin-bottom: 26px;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      margin: 0 0 12px;
+      font-weight: var(--display-weight);
+      font-size: clamp(42px, 7vw, 72px);
+      line-height: 1.0;
+      letter-spacing: -0.025em;
+    }
+
+    h1 .sub {
+      display: block;
+      font-weight: 300;
+      font-size: 0.42em;
+      letter-spacing: -0.005em;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* hero lines are centred (body paragraphs elsewhere are justified) */
+    .authors,
+    .course {
+      text-align: center;
+      text-align-last: center;
+      hyphens: manual;
+    }
+
+    .authors {
+      font-size: 19px;
+      margin: 0 0 2px;
+      color: var(--text);
+    }
+
+    .course {
+      font-size: 16px;
+      margin: 0 0 16px;
+      color: var(--muted);
+    }
+
+    .authors span,
+    .course span {
+      white-space: nowrap;
+    }
+
+    .authors span+span::before,
+    .course span+span::before {
+      content: "\00b7";
+      color: var(--faint);
+      margin: 0 10px;
+    }
+
+    .course .award {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    @media (max-width: 560px) {
+
+      /* stack the course line rather than overflow */
+      .course span {
+        display: block;
+      }
+
+      .course span+span::before {
+        content: none;
+      }
+    }
+
+    .links {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 18px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 700;
+      transition: border-color 0.15s, background 0.15s, transform 0.15s;
+    }
+
+    .btn:hover {
+      text-decoration: none;
+      border-color: var(--rule);
+      background: #222227;
+      transform: translateY(-1px);
+    }
+
+    .btn svg {
+      width: 17px;
+      height: 17px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    /* ---- sections ---- */
+    section {
+      margin-top: 48px;
+    }
+
+    .section-head {
+      margin-bottom: 22px;
+    }
+
+    h2 {
+      font-family: var(--font-display);
+      font-size: clamp(26px, 3.4vw, 34px);
+      font-weight: 900;
+      letter-spacing: -0.015em;
+      line-height: 1.15;
+      margin: 0;
+    }
+
+    /* body text: justified, flush to the content column on both sides */
+    p,
+    figcaption {
+      text-align: justify;
+      text-align-last: left;
+      hyphens: auto;
+      -webkit-hyphens: auto;
+    }
+
+    .lede {
+      color: var(--muted);
+      margin: 10px 0 0;
+    }
+
+
+    /* ---- media ---- */
+    figure {
+      margin: 0;
+    }
+
+    .media {
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #000;
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+    }
+
+    .media.pad {
+      padding: 22px 22px 18px;
+    }
+
+    video,
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    video {
+      background: #000;
+    }
+
+    figcaption {
+      color: var(--muted);
+      font-size: 16.5px;
+      margin: 14px 0 0;
+    }
+
+    /* ---- contents rail ---- */
+    /* fixed in the margin to the right of the centred column; hidden when the margin is too narrow */
+    .toc {
+      display: none;
+    }
+
+    @media (min-width: 1420px) {
+      .toc {
+        display: block;
+        position: fixed;
+        top: 64px;
+        left: calc(50% + 490px + 40px);
+        width: 170px;
+        font-size: 14.5px;
+      }
+    }
+
+    .toc-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin: 0 0 12px 14px;
+    }
+
+    .toc ol {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border-left: 1px solid var(--border);
+    }
+
+    .toc a {
+      display: block;
+      padding: 6px 0 6px 14px;
+      margin-left: -1px;
+      border-left: 2px solid transparent;
+      color: var(--muted);
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .toc a:hover {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .toc a.on {
+      color: var(--text);
+      border-left-color: var(--accent);
+    }
+
+    /* ---- bottom fade: hints that the page scrolls; gone at the end ---- */
+    .fade-bottom {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 140px;
+      pointer-events: none;
+      background: linear-gradient(to bottom, rgba(12, 12, 14, 0), rgba(12, 12, 14, 0.92));
+      transition: opacity 0.3s;
+      z-index: 5;
+    }
+
+    .fade-bottom.gone {
+      opacity: 0;
+    }
+
+    footer {
+      margin-top: 48px;
+      padding-top: 22px;
+      border-top: 1px solid var(--border);
+      color: var(--faint);
+      font-size: 14px;
+    }
+
+    footer h2 {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 12px;
+    }
+
+    .refs {
+      margin: 0;
+      padding-left: 2.2em;
+      line-height: 1.55;
+    }
+
+    .refs li {
+      padding-left: 4px;
+      margin-bottom: 10px;
+    }
+
+    .refs li::marker {
+      content: "[" counter(list-item) "]  ";
+      color: var(--faint);
+    }
+
+    .refs .ref-title,
+    .ack .ref-title {
+      color: var(--muted);
+    }
+
+    .ack {
+      margin: 18px 0 0;
+    }
+
+    /* ---- light transport figure ---- */
+    .tf { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .tf-panel { margin: 0; min-width: 0; }
+    .tf-panel svg { display: block; width: 100%; height: auto; font-family: var(--font-body); }
+    .tf-label { fill: #8b949e; font-size: 18px; }
+    .tf-tex { display: flex; justify-content: center; height: 100%; color: var(--text); font-size: 24px; }
+    .tf-tex.tf-top { align-items: flex-start; }
+    .tf-tex.tf-bottom { align-items: flex-end; }
+    .tf-tex.tf-T { font-size: 27px; }
+    .tf-tex .katex { font-size: 1em; }
+    .tf-pattern { fill: #0e0e11; }
+    .tf-grid { fill: none; stroke: #2e2e34; stroke-width: 1; }
+    .tf-frame { fill: none; stroke: #3d444d; stroke-width: 1; }
+    .tf-light, .tf-resp { stroke: #000; stroke-width: 1; }
+    .tf-light { fill: #ffffff; }
+    .tf-resp { fill: #e5484d; }
+    .tf-flow { fill: none; stroke-width: 2; stroke-linecap: round; }
+    .tf-flow.tf-proj { stroke: var(--accent); }
+    .tf-flow.tf-cam { stroke: var(--camera); }
+    .tf-hit { stroke: #000; stroke-width: 1; }
+    .tf-hit.tf-proj { fill: var(--accent); }
+    .tf-hit.tf-cam { fill: var(--camera); }
+    @media (max-width: 560px) {      /* too narrow for two panels: stack them */
+      .tf { grid-template-columns: 1fr; gap: 18px; }
+    }
+
+    /* ---- phones ---- */
+    @media (max-width: 560px) {
+      .media.pad {
+        padding: 12px 12px 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <main>
+      <header class="hero" id="overview">
+        <h1>Lights Are Secretly Cameras<span class="sub">Simulating Dual Photography in Mitsuba 3</span></h1>
+        <p class="authors"><span>Adarsh Iyer</span><span>Tim Neumann</span></p>
+        <p class="course"><span>MIT 6.4400 Computer Graphics</span><span class="award">Top 5 of 44 final projects</span>
+        </p>
+        <div class="links">
+          <a class="btn" href="https://github.com/adarshramiyer/dual-photography">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Our Code
+          </a>
+          <a class="btn" href="https://graphics.stanford.edu/papers/dual_photography/">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z M14 3v5h5 M8.5 13h7 M8.5 16.5h5"
+                stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Original paper (Sen et al.)
+          </a>
+        </div>
+      </header>
+
+      <figure>
+        <div class="media">
+          <video src="static/videos/overview.mp4?v=1792384925" poster="static/images/posters/overview.jpg"
+            width="1280" height="720" autoplay muted loop playsinline preload="auto"
+            aria-label="Light paths from the projector to the camera reverse, giving the view from the projector"></video>
+        </div>
+        <figcaption><b>Figure 1.</b> Helmholtz reciprocity allows us to interchange the roles of light and camera. Without
+        physically moving either object, we can compute a <i>dual image</i> from the <i>light's</i> viewpoint, as if the
+        illumination came from the camera.</figcaption>
+      </figure>
+
+      <p>
+        In computer graphics, we typically consider lights and cameras to be fundamentally different objects. Lights
+        emit light rays into a scene; those rays interact with the scene until they reach a camera’s sensor, where they
+        are measured and turned into an image. In our project, we show that lights and cameras are actually not so
+        different after all. Particularly, through the method of Dual Photography <a href="#ref-sen">[1]</a>, we
+        demonstrate that we can use a camera as a light, and a light as a camera.
+      </p>
+      <p>
+        As shown in Figure 1, we set up a simple scene which is flood-illuminated from the bottom left by a projector
+        light and imaged from the top right by a camera. We refer to this view of the scene as the <i>primal image</i>,
+        which
+        is easily obtained by raytracing the scene. We show that it is possible to reverse the flow of light from
+        projector to camera, and accordingly to generate a photorealistic image of the scene from the perspective of the
+        projector, as if the illumination came from the position of the camera. This is the <i>dual image</i>.
+        Surprisingly,
+        this dual image is not physically rendered, and we can generate it without physically moving the light or
+        the camera.
+      </p>
+
+      <section id="transport">
+        <div class="section-head">
+          <h2>Light transport</h2>
+        </div>
+        <figure>
+          <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+            <defs>
+              <marker id="tf-head-proj" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#f5a524"/></marker>
+              <marker id="tf-head-cam" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#38bdf8"/></marker>
+            </defs>
+          </svg>
+          <div class="media pad tf">
+            <figure class="tf-panel">
+              <svg viewBox="0 0 460 234" role="img" aria-label="Primal: a white projector pixel lights the car in the scene, the transport matrix T, and the camera pixel that sees that point records its red response.">
+                <image href="static/images/transport/projector.png" x="32" y="10" width="96" height="54"/>
+                <image href="static/images/transport/camera.png" x="352" y="6" width="56" height="58"/>
+                <text class="tf-label" x="230" y="30" text-anchor="middle">Primal</text>
+                <foreignObject x="170" y="58.8" width="120" height="40"><div xmlns="http://www.w3.org/1999/xhtml" class="tf-tex tf-T tf-bottom">$\mathbf{T}$</div></foreignObject>
+                <image href="static/images/transport/scene_primal.jpg" x="136" y="102.8" width="188" height="127.5"/>
+                <rect class="tf-pattern" x="36" y="72" width="88" height="88"/><path class="tf-grid" d="M47 72v88 M58 72v88 M69 72v88 M80 72v88 M91 72v88 M102 72v88 M113 72v88 M36 83h88 M36 94h88 M36 105h88 M36 116h88 M36 127h88 M36 138h88 M36 149h88"/><rect class="tf-frame" x="36" y="72" width="88" height="88"/><rect class="tf-light" x="80" y="116" width="11" height="11"/>
+                <rect class="tf-pattern" x="336" y="72" width="88" height="88"/><path class="tf-grid" d="M347 72v88 M358 72v88 M369 72v88 M380 72v88 M391 72v88 M402 72v88 M413 72v88 M336 83h88 M336 94h88 M336 105h88 M336 116h88 M336 127h88 M336 138h88 M336 149h88"/><rect class="tf-frame" x="336" y="72" width="88" height="88"/><rect class="tf-resp" x="369" y="116" width="11" height="11"/>
+                <g class="tf-flow tf-proj" marker-mid="url(#tf-head-proj)"><path d="M85.5 121.5 L155.4 152.8 L225.3 184"/><path d="M225.3 184 L296.9 154 L368.5 124"/></g>
+                <circle class="tf-hit tf-proj" cx="225.3" cy="184" r="3"/>
+                <foreignObject x="20" y="166" width="120" height="40"><div xmlns="http://www.w3.org/1999/xhtml" class="tf-tex tf-vec tf-top">$\mathbf{p}$</div></foreignObject>
+                <foreignObject x="320" y="166" width="120" height="40"><div xmlns="http://www.w3.org/1999/xhtml" class="tf-tex tf-vec tf-top">$\mathbf{c}$</div></foreignObject>
+              </svg>
+            </figure>
+            <figure class="tf-panel">
+              <svg viewBox="0 0 460 234" role="img" aria-label="Dual: the same path reversed through the transposed matrix: a white camera pixel lights the car and the projector pixel records the red response.">
+                <image href="static/images/transport/projector.png" x="32" y="10" width="96" height="54"/>
+                <image href="static/images/transport/camera.png" x="352" y="6" width="56" height="58"/>
+                <text class="tf-label" x="230" y="30" text-anchor="middle">Dual</text>
+                <foreignObject x="170" y="58.8" width="120" height="40"><div xmlns="http://www.w3.org/1999/xhtml" class="tf-tex tf-T tf-bottom">$\mathbf{T}^\top$</div></foreignObject>
+                <image href="static/images/transport/scene_dual.jpg" x="136" y="102.8" width="188" height="127.5"/>
+                <rect class="tf-pattern" x="36" y="72" width="88" height="88"/><path class="tf-grid" d="M47 72v88 M58 72v88 M69 72v88 M80 72v88 M91 72v88 M102 72v88 M113 72v88 M36 83h88 M36 94h88 M36 105h88 M36 116h88 M36 127h88 M36 138h88 M36 149h88"/><rect class="tf-frame" x="36" y="72" width="88" height="88"/><rect class="tf-resp" x="80" y="116" width="11" height="11"/>
+                <rect class="tf-pattern" x="336" y="72" width="88" height="88"/><path class="tf-grid" d="M347 72v88 M358 72v88 M369 72v88 M380 72v88 M391 72v88 M402 72v88 M413 72v88 M336 83h88 M336 94h88 M336 105h88 M336 116h88 M336 127h88 M336 138h88 M336 149h88"/><rect class="tf-frame" x="336" y="72" width="88" height="88"/><rect class="tf-light" x="369" y="116" width="11" height="11"/>
+                <g class="tf-flow tf-cam" marker-mid="url(#tf-head-cam)"><path d="M374.5 121.5 L299.9 152.8 L225.3 184"/><path d="M225.3 184 L158.4 154.1 L91.4 124.2"/></g>
+                <circle class="tf-hit tf-cam" cx="225.3" cy="184" r="3"/>
+                <foreignObject x="20" y="166" width="120" height="40"><div xmlns="http://www.w3.org/1999/xhtml" class="tf-tex tf-vec tf-top">$\mathbf{p}'$</div></foreignObject>
+                <foreignObject x="320" y="166" width="120" height="40"><div xmlns="http://www.w3.org/1999/xhtml" class="tf-tex tf-vec tf-top">$\mathbf{c}'$</div></foreignObject>
+              </svg>
+            </figure>
+          </div>
+          <figcaption><b>Figure 2.</b> Light from projector pixel $i$ bounces off the scene and reaches camera
+            pixel $j$. The transport matrix $\mathbf{T}$ holds every such path between projector pixels and camera
+            pixels. By Helmholtz reciprocity, the light transport is the same in the backward direction, so transposing
+            $\mathbf{T}$ sends light from the camera to the projector.
+          </figcaption>
+        </figure>
+
+        <p>
+          Figure 2 illustrates the key concepts of light transport and Helmholtz reciprocity. We use a projector of
+          resolution $h_p \times w_p$ and camera of
+          resolution $h_c \times w_c$. Between every pixel
+          of the projector and every pixel of the camera, there exists light transport,
+          the amount to which the brightness of that camera pixel depends on the illumination from that projector pixel.
+        </p>
+        <p>
+          We refer to the light flow from projector pixel $i$ to camera pixel $j$ in the primal image as the
+          <i>forward path</i>, since it
+          proceeds from the light to
+          the camera.
+          Helmholtz reciprocity tells us that the light transport along the forward path is equivalent to the light
+          transport along a hypothetical <i>reciprocal path</i>, one which starts at the camera pixel $j$ and
+          proceeds in reverse
+          to the projector pixel $i$.
+        </p>
+        <p>
+          If we reverse all pairwise light transports
+          in this way, we essentially replace the camera with a virtual projector, and the
+          projector with a virtual camera. In practice, we record the
+          pairwise light transport values in a matrix $\mathbf{T}$, which implicitly represents a 4D light transport
+          function (a 2D pixel → 2D pixel
+          mapping). To use a matrix here, we unroll images into 1D vectors (and can later roll them back). In the rest
+          of this section, we consider images to be these unrolled vectors.
+        </p>
+        <p>
+          $\mathbf{T}$ is structured such that $\mathbf{T}[j, i]$ is the light transport between projector pixel
+          $i$ and camera pixel $j$. This
+          makes $\mathbf{T}$ an $(h_c \times w_c) \times (h_p \times w_p)$ matrix. In the primal case, $\mathbf{c} = \mathbf{T}\mathbf{p}$; that is, the projector
+          illumination pattern $\mathbf{p}$ is transported by $\mathbf{T}$ to form the camera’s image, $\mathbf{c}$. Reciprocity
+          allows us to virtually illuminate the camera’s pixels as
+          $\mathbf{c}'$, and
+          $\mathbf{T}^\top$ transports this virtual illumination back to the perspective of the projector, forming
+          the dual image
+          $\mathbf{p}'$.
+          The right side of Figure 2 illustrates this reversal.
+        </p>
+
+      </section>
+
+      <section id="comparison">
+        <div class="section-head">
+          <h2>Adaptive multiplexing</h2>
+        </div>
+        <figure>
+          <div class="media">
+            <video src="static/videos/adaptive_vs_brute_force.mp4?v=1792481009" poster="static/images/posters/adaptive_vs_brute_force.jpg?v=1792481009"
+              width="1408" height="480" autoplay muted loop playsinline preload="auto"
+              aria-label="Adaptive multiplexing and brute-force scanning, side by side at the same pattern rate"></video>
+          </div>
+          <figcaption><b>Figure 3.</b> Both methods project patterns at the same rate: 30 per second, sped up 2× in the
+            later rounds. Adaptive multiplexing measures the full transport matrix in 777 patterns; brute force needs
+            262,144, about 2.4 hours at 30 per second.</figcaption>
+        </figure>
+
+        <p>
+          The simplest approach to measuring $\mathbf{T}$ is a brute-force scan, where we iterate over all
+          pixels in the projector, illuminate the
+          scene with only the one chosen pixel, and then write the camera’s response into a corresponding
+          column of $\mathbf{T}$. We implement this in Mitsuba 3 <a href="#ref-mitsuba">[2]</a> with 4096 spp,
+          successfully producing dual images at low resolutions (128 × 128 for both camera and projector).
+          However, the time to acquire $\mathbf{T}$ grows quartically as we increase the projector and camera’s resolutions.
+        </p>
+        <p>
+          Adaptive multiplexing <a href="#ref-sen">[1]</a> allows us to capture the light transport much faster; for this scene, as shown in Figure
+          3, we observe a speedup of roughly 340×. The fundamental idea is
+          that there exist projector pixels whose contributions onto the scene are independent of each other. Thus, we
+          can light up these independent pixels simultaneously, greatly parallelizing the acquisition process.
+          We find that adaptive multiplexing produces much better results than
+          a similar method called fixed-pattern scanning, since adaptive multiplexing can resolve collisions (multiple
+          illumination pixels mapping to the same camera pixel).
+        </p>
+        <p>
+          The algorithm begins with the entire projector illuminated at once and then recursively subdivides the
+          grid into fourths. Each one of these projector blocks is then illuminated in sequence—this constitutes a
+          “round” of illumination—and we maintain a conflict graph $C_k = \{(B_i, B_j) : B_i, B_j \in B_k \text{ light a common camera pixel}\}$, where $B_k$ is the set of blocks in round $k$.
+          We can then run a graph coloring
+          algorithm over $C_k$ that determines the subsets of $B_k$ that can
+          be illuminated in parallel during the next round.
+          Because $C_k$ records which blocks cannot be disentangled and no two neighboring blocks
+          in $C_k$ will share a color,
+          this process maximally parallelizes the illumination process for the next round. We continue subdividing until
+          we reach the pixel level, at which point we can directly observe camera images and form the column vectors of
+          $\mathbf{T}$. We maintain a lookup table between projector blocks and camera pixels one level up in the recursive
+          process
+          on any given round, which is used to identify and prune blocks that have no contribution to the camera. This
+          can greatly accelerate the acquisition process.
+        </p>
+      </section>
+
+
+      <section id="results">
+        <div class="section-head">
+          <h2>Dual image</h2>
+        </div>
+        <figure>
+          <div class="media pad">
+            <img src="static/images/primal_dual_ground_truth.png"
+              alt="Primal image, dual image computed from the transport matrix, and ground-truth dual image">
+          </div>
+          <figcaption><b>Figure 4.</b> The dual image produced by our implementation, compared against a rendered ground
+            truth.</figcaption>
+        </figure>
+        <p>
+          Figure 4 illustrates that Helmholtz reciprocity and adaptive multiplexing put together allow us to more
+          scalably compute dual images (here, 512 × 512). The result is very similar to a ground truth dual image,
+          which is rendered with the camera and projector physically swapped. Speckles and some loss of ambient lighting
+          are
+          artifacts
+          of raytracing in simulation. At 128 × 128 resolution, the maximum feasible for brute force acquisition,
+          adaptive multiplexing achieves
+          comparable quality
+          to brute force.
+        </p>
+      </section>
+
+      <section id="relighting">
+        <div class="section-head">
+          <h2>Relighting</h2>
+        </div>
+        <figure>
+          <div class="media">
+            <video src="static/videos/relight.mp4" poster="static/images/posters/relight.jpg"
+              width="1408" height="396" autoplay muted loop playsinline preload="auto"
+              aria-label="Two relighting examples: a swept beam and drifting colored light, each with its illumination pattern"></video>
+          </div>
+          <figcaption><b>Figure 5.</b> Left: a beam swept across the dual image. Right: drifting colored light. Frames are
+            computed from $\mathbf{T}$, with no new renders.</figcaption>
+        </figure>
+        <p>
+          Since the full light transport information is disentangled and recorded in $\mathbf{T}$, we can relight
+          the scene by effectively shining custom patterns from the
+          camera's position. Two examples are shown in Figure 5. The relit dual images respond in physically consistent
+          ways under the new lighting.
+          This is despite the fact that they are generated with no raytracing, nor with an actual camera present at the
+          viewpoint, nor with an actual light in the
+          location that one appears to be.
+        </p>
+      </section>
+
+      <section id="conclusion">
+        <div class="section-head">
+          <h2>Conclusion</h2>
+        </div>
+        <p>
+          At the beginning of this project, we aimed to interchange the roles of lights and cameras, taking pictures
+          from a light’s perspective, illuminated from the location of a camera. By efficiently measuring light
+          transport and reversing it, our simulation of dual photography achieves this result and the
+          interesting properties that come with it.
+        </p>
+      </section>
+
+      <footer id="references">
+        <h2>References</h2>
+        <ol class="refs">
+          <li id="ref-sen">
+            Pradeep Sen, Billy Chen, Gaurav Garg, Stephen R. Marschner, Mark Horowitz, Marc Levoy and Hendrik P. A.
+            Lensch.
+            <a class="ref-title" href="https://graphics.stanford.edu/papers/dual_photography/">Dual Photography</a>.
+            <em>ACM Transactions on Graphics</em> 24(3), 745&ndash;755 (Proc. SIGGRAPH 2005).
+            <a href="https://doi.org/10.1145/1073204.1073257">doi:10.1145/1073204.1073257</a>
+          </li>
+          <li id="ref-mitsuba">
+            Wenzel Jakob, S&eacute;bastien Speierer, Nicolas Roussel, Merlin Nimier-David, Delio Vicini, Tizian Zeltner,
+            Baptiste Nicolet, Miguel Crespo, Vincent Leroy and Ziyi Zhang.
+            <a class="ref-title" href="https://www.mitsuba-renderer.org/">Mitsuba 3 renderer</a>, 2022.
+          </li>
+        </ol>
+        <p class="ack">
+          The car is adapted from the <a class="ref-title"
+            href="https://free3d.com/3d-model/ford-thinderbird-1961-re-uploaded-71607.html">Ford Thunderbird 1961</a>
+          model on Free3D.
+        </p>
+      </footer>
+    </main>
+
+    <nav class="toc" aria-label="Contents">
+      <p class="toc-title">Contents</p>
+      <ol>
+        <li><a href="#overview">Overview</a></li>
+        <!-- the rest is built from the page's <section id> headings (script below) -->
+      </ol>
+    </nav>
+  </div>
+  <div class="fade-bottom" aria-hidden="true"></div>
+
+  <script>
+    // Every video autoplays and loops; its playback controls stay hidden until the viewer reaches
+    // for them (hover, tap or keyboard focus), so it can be paused, rewound or scrubbed.
+    document.querySelectorAll("video").forEach(function (v) {
+      function show() { v.controls = true; }
+      function hide() { if (!v.paused) v.controls = false; }
+      v.addEventListener("pointerenter", show);
+      v.addEventListener("pointerleave", hide);
+      v.addEventListener("touchstart", show, { passive: true });
+      v.addEventListener("focus", show);
+      v.tabIndex = 0;
+    });
+
+    // Contents: one entry per <section id> in page order, titled by its <h2>, so the rail follows
+    // the headings; then highlight the section being read.
+    (function () {
+      var list = document.querySelector(".toc ol");
+      document.querySelectorAll("main section[id]").forEach(function (sec) {
+        var h = sec.querySelector("h2");
+        if (!h) return;
+        var li = document.createElement("li"), a = document.createElement("a");
+        a.href = "#" + sec.id;
+        a.textContent = h.textContent.trim();
+        li.appendChild(a);
+        list.appendChild(li);
+      });
+      var links = Array.prototype.slice.call(document.querySelectorAll(".toc a"));
+      var targets = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+      function update() {
+        var y = window.scrollY + window.innerHeight * 0.35, on = 0;
+        targets.forEach(function (t, i) { if (t && t.getBoundingClientRect().top + window.scrollY <= y) on = i; });
+        links.forEach(function (a, i) { a.classList.toggle("on", i === on); });
+      }
+      window.addEventListener("scroll", update, { passive: true });
+      window.addEventListener("resize", update);
+      update();
+    })();
+
+    // Bottom fade: fades out once the end of the page is in view.
+    (function () {
+      var fade = document.querySelector(".fade-bottom");
+      function update() {
+        var left = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
+        fade.classList.toggle("gone", left < 40);
+      }
+      window.addEventListener("scroll", update, { passive: true });
+      window.addEventListener("resize", update);
+      update();
+    })();
+  </script>
+
+</body>
+
+</html>
